@@ -101,12 +101,13 @@ namespace APIfilms.Controllers
                 return Conflict("Un utilisateur avec cet email existe déjà.");
             }
 
-            utilisateur.DateCreation = DateTime.UtcNow;
+            utilisateur.DateCreation = DateTime.UtcNow; // Valeur par défaut
             _context.Utilisateurs.Add(utilisateur);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetUtilisateurById), new { id = utilisateur.UtilisateurId }, utilisateur);
         }
+
 
         // DELETE: api/Utilisateurs/5
         [HttpDelete("{id}")]
