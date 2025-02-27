@@ -1,3 +1,5 @@
+using APIfilms.Models.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace APIfilms
 {
@@ -10,9 +12,14 @@ namespace APIfilms
             // Add services to the container.
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+            builder.Services.AddDbContext<FilmRatingsDBContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("FilmRatingsDBContext")));
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // builder.Services.AddScoped<IDataRepository<Utilisateur>, UtilisateurManager>();
 
             var app = builder.Build();
 
