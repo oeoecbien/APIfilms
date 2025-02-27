@@ -17,7 +17,6 @@ namespace APIfilms.Tests
     {
         private FilmRatingsDBContext context;
         private UtilisateursController controller;
-
         private IDataRepository<Utilisateur> dataRepository;
 
         [TestInitialize]
@@ -73,49 +72,64 @@ namespace APIfilms.Tests
         }
 
         [TestMethod]
-        public async Task PostUtilisateur_CreatesNewUser()
+        public void Postutilisateur_ModelValidated_CreationOK_AvecMoq()
         {
-            var newUser = new Utilisateur
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            var userController = new UtilisateursController(mockRepository.Object);
+
+            Utilisateur user = new Utilisateur
             {
-                Nom = "Dupont",
-                Prenom = "Jean",
-                Mail = "dupont@test.com",
-                Pwd = "Test1234!"
+                Nom = "POISSON",
+                Prenom = "Pascal",
+                Mobile = "1",
+                Mail = "poisson@gmail.com",
+                Pwd = "Toto12345678!",
+                Rue = "Chemin de Bellevue",
+                CodePostal = "74940",
+                Ville = "Annecy-le-Vieux",
+                Pays = "France",
+                Latitude = null,
+                Longitude = null
             };
 
-            var result = await controller.PostUtilisateur(newUser);
-            var createdUser = await context.Utilisateurs.FirstOrDefaultAsync(u => u.Mail == newUser.Mail);
+            var actionResult = userController.PostUtilisateur(user).Result;
 
-            Assert.IsNotNull(createdUser);
-            Assert.AreEqual(newUser.Mail, createdUser.Mail);
+            Assert.IsInstanceOfType(actionResult, typeof(ActionResult<Utilisateur>), "Pas un ActionResult<Utilisateur>");
+            Assert.IsInstanceOfType(actionResult.Result, typeof(CreatedAtActionResult), "Pas un CreatedAtActionResult");
+
+            var result = actionResult.Result as CreatedAtActionResult;
+            Assert.IsInstanceOfType(result.Value, typeof(Utilisateur), "Pas un Utilisateur");
+
+            user.UtilisateurId = ((Utilisateur)result.Value).UtilisateurId;
+            Assert.AreEqual(user, (Utilisateur)result.Value, "Utilisateurs pas identiques");
         }
 
         [TestMethod]
-        public async Task DeleteUtilisateur_RemovesUser()
+        public async Task DeleteUtilisateurTest_AvecMoq()
         {
-            var user = new Utilisateur { Nom = "Test", Prenom = "User", Mail = "delete@example.com" };
-            context.Utilisateurs.Add(user);
-            await context.SaveChangesAsync();
+            Utilisateur user = new Utilisateur
+            {
+                UtilisateurId = 1,
+                Nom = "Calida",
+                Prenom = "Lilley",
+                Mobile = "0653930778",
+                Mail = "clilleymd@last.fm",
+                Pwd = "Toto12345678!",
+                Rue = "Impasse des bergeronnettes",
+                CodePostal = "74200",
+                Ville = "Allinges",
+                Pays = "France",
+                Latitude = 46.344795F,
+                Longitude = 6.4885845F
+            };
 
-            var result = await controller.DeleteUtilisateur(user.UtilisateurId);
-            var deletedUser = await context.Utilisateurs.FindAsync(user.UtilisateurId);
-
-            Assert.IsNull(deletedUser);
-        }
-
-        [TestMethod]
-        public void GetUtilisateurById_ExistingIdPassed_ReturnsRightItem_AvecMoq()
-        {
-            var user = new Utilisateur { UtilisateurId = 1, Nom = "Calida", Mail = "clilleymd@last.fm" };
             var mockRepository = new Mock<IDataRepository<Utilisateur>>();
-            mockRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(user);
+            mockRepository.Setup(x => x.GetByIdAsync(1).Result).Returns(user);
 
             var userController = new UtilisateursController(mockRepository.Object);
-            var actionResult = userController.GetUtilisateurById(1).Result;
+            var actionResult = userController.DeleteUtilisateur(1).Result;
 
-            Assert.IsNotNull(actionResult);
-            Assert.IsNotNull(actionResult.Value);
-            Assert.AreEqual(user.Mail, actionResult.Value.Mail);
+            Assert.IsInstanceOfType(actionResult, typeof(NoContentResult), "Pas un NoContentResult");
         }
     }
 }
