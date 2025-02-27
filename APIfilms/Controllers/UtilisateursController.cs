@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APIfilms.Models.EntityFramework;
-using TP4P1.Models.DataManager;
+using APIfilms.Models.DataManager;
 using APIfilms.Models.Repository;
 
 namespace APIfilms.Controllers
@@ -29,7 +29,7 @@ namespace APIfilms.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Utilisateur>>> GetUtilisateurs()
         {
-            return dataRepository.GetAll();
+            return await dataRepository.GetAllAsync();
         }
 
         // GET: api/Utilisateurs/5
@@ -40,16 +40,12 @@ namespace APIfilms.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Utilisateur>> GetUtilisateurById(int id)
         {
-            var utilisateur = dataRepository.GetById(id);
-
-            //var utilisateur = await _context.Utilisateurs.FindAsync(id);
-
-            if (utilisateur == null)
+            var utilisateurResult = await dataRepository.GetByIdAsync(id);
+            if (utilisateurResult.Value == null)
             {
                 return NotFound();
             }
-
-            return utilisateur;
+            return utilisateurResult;
         }
 
         // GET: api/Utilisateurs/toto@titi.fr
@@ -60,20 +56,15 @@ namespace APIfilms.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Utilisateur>> GetUtilisateurByEmail(string email)
         {
-            var utilisateur = dataRepository.GetByString(email);
-
-            //var utilisateur = await _context.Utilisateurs.FirstOrDefaultAsync(e => e.Mail.ToUpper() == email.ToUpper());
-
-            if (utilisateur == null)
+            var utilisateurResult = await dataRepository.GetByStringAsync(email);
+            if (utilisateurResult.Value == null)
             {
                 return NotFound();
             }
-
-            return utilisateur;
+            return utilisateurResult;
         }
 
         // PUT: api/Utilisateurs/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,21 +76,19 @@ namespace APIfilms.Controllers
                 return BadRequest();
             }
 
-            var userToUpdate = dataRepository.GetById(id);
-
-            if (userToUpdate == null)
+            var utilisateurResult = await dataRepository.GetByIdAsync(id);
+            if (utilisateurResult.Value == null)
             {
                 return NotFound();
             }
             else
             {
-                dataRepository.Update(userToUpdate.Value, utilisateur);
+                await dataRepository.UpdateAsync(utilisateurResult.Value, utilisateur);
                 return NoContent();
             }
         }
 
         // POST: api/Utilisateurs
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -110,8 +99,8 @@ namespace APIfilms.Controllers
                 return BadRequest(ModelState);
             }
 
-            dataRepository.Add(utilisateur);
-            return CreatedAtAction("GetById", new { id = utilisateur.UtilisateurId }, utilisateur); // GetById : nom de l’action
+            await dataRepository.AddAsync(utilisateur);
+            return CreatedAtAction("GetById", new { id = utilisateur.UtilisateurId }, utilisateur);
         }
 
         // DELETE: api/Utilisateurs/5
@@ -120,14 +109,13 @@ namespace APIfilms.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteUtilisateur(int id)
         {
-            var utilisateur = dataRepository.GetById(id);
-
-            if (utilisateur == null)
+            var utilisateurResult = await dataRepository.GetByIdAsync(id);
+            if (utilisateurResult.Value == null)
             {
                 return NotFound();
             }
 
-            dataRepository.Delete(utilisateur.Value);
+            await dataRepository.DeleteAsync(utilisateurResult.Value);
             return NoContent();
         }
 
