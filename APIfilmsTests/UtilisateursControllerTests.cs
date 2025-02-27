@@ -6,6 +6,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using APIfilms.Models.Repository;
+using TP4P1.Models.DataManager;
 
 namespace APIfilms.Tests
 {
@@ -14,6 +16,7 @@ namespace APIfilms.Tests
     {
         private FilmRatingsDBContext context;
         private UtilisateursController controller;
+        private IDataRepository<Utilisateur> dataRepository;
 
         [TestInitialize]
         public void Initialize()
@@ -23,7 +26,8 @@ namespace APIfilms.Tests
                 .Options;
 
             context = new FilmRatingsDBContext(options);
-            controller = new UtilisateursController(context);
+            dataRepository = new UtilisateurManager(context);
+            controller = new UtilisateursController(dataRepository);
         }
 
         [TestMethod]

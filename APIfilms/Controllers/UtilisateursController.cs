@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APIfilms.Models.EntityFramework;
+using TP4P1.Models.DataManager;
+using APIfilms.Models.Repository;
 
 namespace APIfilms.Controllers
 {
@@ -13,25 +15,34 @@ namespace APIfilms.Controllers
     [ApiController]
     public class UtilisateursController : ControllerBase
     {
-        private readonly FilmRatingsDBContext _context;
+        private readonly IDataRepository<Utilisateur> dataRepository;
 
-        public UtilisateursController(FilmRatingsDBContext context)
+        // private readonly dataRepository dataRepository;
+        // private readonly FilmRatingsDBContext _context;
+
+        public UtilisateursController(IDataRepository<Utilisateur> dataRepo)
         {
-            _context = context;
+            dataRepository = dataRepo;
         }
 
         // GET: api/Utilisateurs
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Utilisateur>>> GetUtilisateurs()
         {
-            return await _context.Utilisateurs.ToListAsync();
+            return dataRepository.GetAll();
         }
 
         // GET: api/Utilisateurs/5
-        [HttpGet("{id}")]
+        [HttpGet]
+        [Route("[action]/{id}")]
+        [ActionName("GetById")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Utilisateur>> GetUtilisateurById(int id)
         {
-            var utilisateur = await _context.Utilisateurs.FindAsync(id);
+            var utilisateur = dataRepository.GetById(id);
+
+            //var utilisateur = await _context.Utilisateurs.FindAsync(id);
 
             if (utilisateur == null)
             {
@@ -41,12 +52,17 @@ namespace APIfilms.Controllers
             return utilisateur;
         }
 
-        [HttpGet("email/{email}")]
+        // GET: api/Utilisateurs/toto@titi.fr
+        [HttpGet]
+        [Route("[action]/{email}")]
+        [ActionName("GetByEmail")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Utilisateur>> GetUtilisateurByEmail(string email)
         {
-            var utilisateur = await _context.Utilisateurs
-                .Where(u => EF.Functions.ILike(u.Mail, email))
-                .FirstOrDefaultAsync();
+            var utilisateur = dataRepository.GetByString(email);
+
+            //var utilisateur = await _context.Utilisateurs.FirstOrDefaultAsync(e => e.Mail.ToUpper() == email.ToUpper());
 
             if (utilisateur == null)
             {
@@ -59,6 +75,9 @@ namespace APIfilms.Controllers
         // PUT: api/Utilisateurs/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PutUtilisateur(int id, Utilisateur utilisateur)
         {
             if (id != utilisateur.UtilisateurId)
@@ -66,68 +85,55 @@ namespace APIfilms.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(utilisateur).State = EntityState.Modified;
+            var userToUpdate = dataRepository.GetById(id);
 
-            try
+            if (userToUpdate == null)
             {
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            else
             {
-                if (!UtilisateurExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                dataRepository.Update(userToUpdate.Value, utilisateur);
+                return NoContent();
             }
-
-            return NoContent();
         }
 
         // POST: api/Utilisateurs
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Utilisateur>> PostUtilisateur([FromBody] Utilisateur utilisateur)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<Utilisateur>> PostUtilisateur(Utilisateur utilisateur)
         {
-            if (utilisateur == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Le corps de la requête ne peut pas être vide.");
+                return BadRequest(ModelState);
             }
 
-            if (await _context.Utilisateurs.AnyAsync(u => u.Mail == utilisateur.Mail))
-            {
-                return Conflict("Un utilisateur avec cet email existe déjà.");
-            }
-
-            utilisateur.DateCreation = DateTime.UtcNow; // Valeur par défaut
-            _context.Utilisateurs.Add(utilisateur);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetUtilisateurById), new { id = utilisateur.UtilisateurId }, utilisateur);
+            dataRepository.Add(utilisateur);
+            return CreatedAtAction("GetById", new { id = utilisateur.UtilisateurId }, utilisateur); // GetById : nom de l’action
         }
-
 
         // DELETE: api/Utilisateurs/5
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteUtilisateur(int id)
         {
-            var utilisateur = await _context.Utilisateurs.FindAsync(id);
+            var utilisateur = dataRepository.GetById(id);
+
             if (utilisateur == null)
             {
                 return NotFound();
             }
 
-            _context.Utilisateurs.Remove(utilisateur);
-            await _context.SaveChangesAsync();
-
+            dataRepository.Delete(utilisateur.Value);
             return NoContent();
         }
 
-        private bool UtilisateurExists(int id)
-        {
-            return _context.Utilisateurs.Any(e => e.UtilisateurId == id);
-        }
+        //private bool UtilisateurExists(int id)
+        //{
+        //    return _context.Utilisateurs.Any(e => e.UtilisateurId == id);
+        //}
     }
 }

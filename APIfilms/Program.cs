@@ -1,5 +1,7 @@
 using APIfilms.Models.EntityFramework;
+using APIfilms.Models.Repository;
 using Microsoft.EntityFrameworkCore;
+using TP4P1.Models.DataManager;
 
 namespace APIfilms
 {
@@ -19,7 +21,7 @@ namespace APIfilms
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // builder.Services.AddScoped<IDataRepository<Utilisateur>, UtilisateurManager>();
+            builder.Services.AddScoped<IDataRepository<Utilisateur>, UtilisateurManager>();
 
             var app = builder.Build();
 
